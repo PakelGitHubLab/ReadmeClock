@@ -1,0 +1,76 @@
+name: WHAT TIME IS IT?
+
+on:
+  schedule:
+    # Runs every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:  # Allows manual triggering of the workflow
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Update README
+        run: |
+          echo "Updating README.md with the current time"
+
+          # Function to get current time for a given timezone
+          update_time() {
+            local timezone=$1
+            local label=$2
+            echo "| $label | $(TZ=$timezone date +"%Y-%m-%d %H:%M:%S") |"
+          }
+
+          # Time zones and labels
+          timezones=(
+            "Pacific/Kwajalein|UTC-12:00 - Baker Island Time (BIT)"
+            "Pacific/Niue|UTC-11:00 - Niue Time (NUT), Samoa Standard Time (SST)"
+            "Pacific/Honolulu|UTC-10:00 - Hawaii-Aleutian Standard Time (HAST), Tahiti Time (TAHT)"
+            "America/Anchorage|UTC-09:00 - Alaska Standard Time (AKST)"
+            "America/Los_Angeles|UTC-08:00 - Pacific Standard Time (PST)"
+            "America/Denver|UTC-07:00 - Mountain Standard Time (MST)"
+            "America/Chicago|UTC-06:00 - Central Standard Time (CST)"
+            "America/New_York|UTC-05:00 - Eastern Standard Time (EST)"
+            "America/Halifax|UTC-04:00 - Atlantic Standard Time (AST), Eastern Caribbean Time (ECT)"
+            "America/Argentina/Buenos_Aires|UTC-03:00 - Argentina Time (ART), Brasília Time (BRT), Uruguay Standard Time (UYT)"
+            "Atlantic/South_Georgia|UTC-02:00 - South Georgia and the South Sandwich Islands Time (SGT)"
+            "Europe/Lisbon|UTC±00:00 - Greenwich Mean Time (GMT), Western European Time (WET)"
+            "Europe/Berlin|UTC+01:00 - Central European Time (CET), West Africa Time (WAT)"
+            "Europe/Athens|UTC+02:00 - Eastern European Time (EET), Central Africa Time (CAT)"
+            "Europe/Moscow|UTC+03:00 - Moscow Time (MSK), East Africa Time (EAT)"
+            "Asia/Dubai|UTC+04:00 - Azerbaijan Time (AZT), Gulf Standard Time (GST)"
+            "Asia/Karachi|UTC+05:00 - Pakistan Standard Time (PKT), Yekaterinburg Time (YEKT)"
+            "Asia/Dhaka|UTC+06:00 - Bangladesh Standard Time (BST), Omsk Time (OMST)"
+            "Asia/Bangkok|UTC+07:00 - Indochina Time (ICT), Krasnoyarsk Time (KRAT)"
+            "Asia/Singapore|UTC+08:00 - China Standard Time (CST), Australian Western Standard Time (AWST), Singapore Time (SGT)"
+            "Asia/Tokyo|UTC+09:00 - Japan Standard Time (JST), Korea Standard Time (KST)"
+            "Australia/Sydney|UTC+10:00 - Australian Eastern Standard Time (AEST), Papua New Guinea Time (PGT)"
+            "Pacific/Efate|UTC+11:00 - Solomon Islands Time (SBT), Vanuatu Time (VUT)"
+            "Pacific/Fiji|UTC+12:00 - Fiji Time (FJT), New Zealand Standard Time (NZST)"
+          )
+
+          # Create the README.md file with a table
+          echo "# Current Time in Various Time Zones" > README.md
+          echo "" >> README.md
+          echo "| Time Zone | Current Time |" >> README.md
+          echo "|-----------|--------------|" >> README.md
+          for timezone_label in "${timezones[@]}"; do
+            IFS='|' read -r timezone label <<< "$timezone_label"
+            update_time "$timezone" "$label" >> README.md
+          done
+
+      - name: Commit changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          git config --global user.name "PakelGitHubLab"
+          git config --global user.email "pakelgithublab@gmail.com"
+          git add README.md
+          git commit -m "Update README with current time in various time zones"
+          git push https://PakelGitHubLab:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/PakelGitHubLab/ReadMeClock.git HEAD:main
